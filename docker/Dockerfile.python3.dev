@@ -1,0 +1,12 @@
+FROM nvcr.io/nvidia/tensorflow:19.09-py3
+
+RUN apt-get update && apt-get --yes install openssh-server python3-opencv
+
+RUN pip install -r /tmp/requirements.txt
+
+COPY ./keys/id_rsa.pub /tmp/tmp.pub
+COPY ./src/requirements.txt /tmp/requirements.txt
+
+RUN mkdir -p ~/.ssh && chmod 700 ~/.ssh && cat /tmp/tmp.pub >> ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys && rm -f /tmp/tmp.pub
+
+ENTRYPOINT service ssh restart && bash
