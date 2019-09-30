@@ -1,12 +1,27 @@
-FROM nvcr.io/nvidia/tensorflow:19.09-py3
+FROM nvcr.io/nvidia/l4t-base:r32.2
 
-RUN apt-get update && apt-get --yes install openssh-server python3-opencv
+ENV DEBIAN_FRONTEND=noninteractive
 
-RUN pip install -r /tmp/requirements.txt
+# Install Python3, Git and OpenCV
+RUN apt-get update && apt-get --yes install openssh-server python3-dev python3-pip python3-opencv git
+RUN pip3 install --upgrade pip
 
-COPY ./keys/id_rsa.pub /tmp/tmp.pub
+# Install the code requirements
 COPY ./src/requirements.txt /tmp/requirements.txt
+RUN pip3 install -r /tmp/requirements.txt
 
+# Install the ssh public key
+COPY ./keys/id_rsa.pub /tmp/tmp.pub
 RUN mkdir -p ~/.ssh && chmod 700 ~/.ssh && cat /tmp/tmp.pub >> ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys && rm -f /tmp/tmp.pub
 
+# Install VSCode
+RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 0CC3FD642696BFC8
+RUN wget -O /tmp/apt.sh https://code.headmelted.com/installers/apt.sh
+RUN chmod +x /tmp/apt.sh
+RUN /tmp/apt.sh
+
+# Set the WORKDIR
+WORKDIR /src
+
+# Restart ssh service
 ENTRYPOINT service ssh restart && bash

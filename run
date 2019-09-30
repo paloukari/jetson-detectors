@@ -1,1 +1,1 @@
-docker run --rm --runtime nvidia -ti -e DISPLAY=$DISPLAY -v /src:/src -p 32001:22 dev-python3
+docker run --rm --runtime nvidia -ti -e DISPLAY=$DISPLAY -v "$PWD":/src -p 32001:22 dev-python3
