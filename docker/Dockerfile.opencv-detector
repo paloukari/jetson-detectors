@@ -1,0 +1,5 @@
+FROM base-dev
+
+# Install the code requirements
+COPY ./src/opencv-detector/requirements.txt /tmp/requirements.txt
+RUN pip3 install -r /tmp/requirements.txt
