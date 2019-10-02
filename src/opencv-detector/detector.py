@@ -6,11 +6,14 @@ if 'CAMERA_ID' in os.environ:
 else:
     camera_id = 1
 
-classifier_xml = './src/opencv-detector/model/haarcascade_frontalface_default.xml'
-classifier = cv.CascadeClassifier()
+if 'DETECTOR_MODEL' in os.environ:
+    detector_model = int(os.environ['DETECTOR_MODEL'])
+else:
+    detector_model = './src/opencv-detector/model/haarcascade_frontalface_default.xml'
 
-if not classifier.load(classifier_xml):
-    raise ValueError(f'Could not load {classifier_xml}')
+classifier = cv.CascadeClassifier()
+if not classifier.load(detector_model):
+    raise ValueError(f'Could not load {detector_model}')
 
 video_capture = cv.VideoCapture(camera_id)
 

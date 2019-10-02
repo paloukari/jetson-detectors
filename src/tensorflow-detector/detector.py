@@ -1,15 +1,13 @@
 import numpy as np
 import os
+import threading
 import time
 import uuid
 import cv2 as cv
-import tensorflow as tf
 import tensorflow.contrib.tensorrt as trt
-import threading
+import tensorflow as tf
 
-from videocaptureasync import VideoCaptureAsync
-from objectdetectasync import ObjectDetectionAsync
-
+# Initialize from ENV
 if 'CAMERA_ID' in os.environ:
     camera_id = int(os.environ['CAMERA_ID'])
 else:
@@ -18,25 +16,16 @@ else:
 if 'DETECTOR_MODEL' in os.environ:
     detector_model = int(os.environ['DETECTOR_MODEL'])
 else:
-    detector_model = './model/ssd_inception_v2_coco_trt.pb'
-
+    detector_model = './src/tensorflow-detector/model/ssd_inception_v2_coco_trt.pb'
+    
 if not os.path.exists(detector_model):
     raise ValueError(f'Could not load {detector_model}')
 
-#video_capture = cv.VideoCapture(camera_id)
-video_capture = VideoCaptureAsync(camera_id)
-video_capture.start()
-video_capture_result, frame = video_capture.test()
+video_capture = cv.VideoCapture(camera_id)
 
-if video_capture_result == False:
-    raise ValueError(f'Error reading the frame from camera {camera_id}')
-
-trt_graph = tf.GraphDef()
-
-print(f'Loading model {detector_model}... (this might take some minutes)')
-
-
-with tf.gfile.GFile(detector_model, 'rb') as f:
+trt_graph = tf.compat.v1.GraphDef()
+print(f'Loading model {detector_model}...')
+with tf.io.gfile.GFile(detector_model, 'rb') as f:
     trt_graph.ParseFromString(f.read())
     print(f'{detector_model} loaded.')
 
@@ -45,7 +34,6 @@ tf_config.gpu_options.allow_growth = True
 
 tf_sess = tf.Session(config=tf_config)
 
-print(f'Importing Graph..')
 tf.import_graph_def(trt_graph, name='')
 
 tf_input = tf_sess.graph.get_tensor_by_name('image_tensor:0')
@@ -54,47 +42,33 @@ tf_boxes = tf_sess.graph.get_tensor_by_name('detection_boxes:0')
 tf_classes = tf_sess.graph.get_tensor_by_name('detection_classes:0')
 tf_num_detections = tf_sess.graph.get_tensor_by_name('num_detections:0')
 
-camera_height, camera_width, channels = frame.shape
-read_lock = threading.Lock()
-
-detector_frame = None
-
-
-def frame_callback():
-    with read_lock:
-        if detector_frame is not None:
-            return detector_frame.copy()
-        return None
-
-
-object_detection = ObjectDetectionAsync(
-    tf_sess, tf_input, tf_scores, tf_boxes, tf_classes, tf_num_detections, frame_callback)
-object_detection.start()
-
-while(video_capture_result):
+while(True):
     # Capture frame-by-frame
-    video_capture_result, frame, frame_resized = video_capture.read()
-    with read_lock:
-        detector_frame = frame_resized
+    video_capture_result, frame = video_capture.read()
 
     if video_capture_result == False:
         print(f'Error reading the frame from camera {camera_id}')
 
-    scores, boxes, classes, num_detections = object_detection.read()
+    # face detection and other logic goes here
+    image_resized = cv.resize(frame,(300,300))
+
+    scores, boxes, classes, num_detections = tf_sess.run(
+        [tf_scores, tf_boxes, tf_classes, tf_num_detections], 
+        feed_dict={tf_input: image_resized[None, ...]})
+
+    boxes = boxes[0] # index by 0 to remove batch dimension
+    scores = scores[0]
+    classes = classes[0]
+    num_detections = num_detections[0]
+    
+    print('----------------------------------------------------')
     for i in range(int(num_detections)):
-        box = boxes[i] * np.array([camera_height,
-                                   camera_width, camera_height, camera_width])
-        box = box.astype(int)
+        box = boxes[i] * np.array([300, 300, 300, 300])
 
-        cv.rectangle(frame, (box[1], box[0]), (box[3],
-                                               box[2]), color=(0, 255, 0), thickness=1)
-        text = "{0:.0f}% | {1}".format(scores[i]*100, str(int(classes[i])))
-        cv.putText(frame,text,(box[3]+10, box[2]), cv.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
+        detected_object = image_resized[int(box[0]):int(box[2]), int(box[1]):int(box[3])]
+        detected_object = cv.resize(detected_object, (256,256), interpolation = cv.INTER_AREA) 
+        ret, face_jpg = cv.imencode(".jpg", detected_object) 
+        client.publish(f'device/{deviceId}/object/{int(classes[i])}', face_jpg.tobytes())
+        print(f'Detected object class {int(classes[i])}')
 
-    cv.imshow('Input', frame)
-    if cv.waitKey(1) == 27:
-        break
-
-cv.destroyAllWindows()
-video_capture.stop()
-object_detection.stop()
+client.loop_stop()
