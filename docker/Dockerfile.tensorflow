@@ -44,16 +44,6 @@ RUN python3 setup.py build --cpp_implementation
 RUN python3 setup.py test --cpp_implementation
 RUN python3 setup.py install --cpp_implementation
 
-# Install VSCode - Remove this in a production deployment
-RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 0CC3FD642696BFC8
-RUN wget -O /tmp/apt.sh https://code.headmelted.com/installers/apt.sh
-RUN chmod +x /tmp/apt.sh
-RUN /tmp/apt.sh
-
-# Install the ssh public key - Remove this in a production deployment
-COPY ./keys/id_rsa.pub /tmp/tmp.pub
-RUN mkdir -p ~/.ssh && chmod 700 ~/.ssh && cat /tmp/tmp.pub >> ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys && rm -f /tmp/tmp.pub
-
 # Install the code requirements
 COPY ./src/tensorflow-detector/requirements.txt /tmp/requirements.txt
 RUN pip3 install -r /tmp/requirements.txt
@@ -62,3 +52,7 @@ RUN pip3 install -r /tmp/requirements.txt
 WORKDIR /src
 
 ENTRYPOINT service ssh restart && bash
+
+# Install the ssh public key - Remove this in a production deployment
+COPY ./keys/id_rsa.pub /tmp/tmp.pub 
+RUN mkdir -p ~/.ssh && chmod 700 ~/.ssh && cat /tmp/tmp.pub >> ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys && rm -f /tmp/tmp.pub

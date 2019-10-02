@@ -1,0 +1,9 @@
+FROM tensorflow
+
+RUN git clone --recursive https://github.com/NVIDIA-Jetson/tf_trt_models.git
+WORKDIR /src/tf_trt_models
+RUN ./install.sh python3
+
+RUN sudo apt-get install --yes libfreetype6-dev
+RUN pip install matplotlib Pillow
+WORKDIR /src
