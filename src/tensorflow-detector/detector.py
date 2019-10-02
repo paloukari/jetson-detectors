@@ -6,12 +6,39 @@ import uuid
 import cv2 as cv
 import tensorflow.contrib.tensorrt as trt
 import tensorflow as tf
+from tf_trt_models.detection import download_detection_model
+from tf_trt_models.detection import build_detection_graph
+from tensorflow.python.compiler.tensorrt import trt_convert as trt
+from tensorflow.python.framework import graph_io
 
+config_path, checkpoint_path = download_detection_model('ssd_inception_v2_coco')
+
+frozen_graph, input_names, output_names = build_detection_graph(
+    config=config_path,
+    checkpoint=checkpoint_path
+)
+
+trt_graph = trt.create_inference_graph(
+    input_graph_def=frozen_graph,
+    outputs=output_names,
+    max_batch_size=1,
+    max_workspace_size_bytes=1 << 25,
+    precision_mode='FP16',
+    minimum_segment_size=50
+)
+# saved_model_dir_trt = "./tensorrt_model.trt"
+# converter = trt.TrtGraphConverter(
+#     input_graph_def=frozen_graph,
+#     nodes_blacklist=['outputs/Softmax']) #output nodes
+# converter.save(saved_model_dir_trt)
+
+    
 # Initialize from ENV
 if 'CAMERA_ID' in os.environ:
     camera_id = int(os.environ['CAMERA_ID'])
 else:
     camera_id = 1
+
 
 if 'DETECTOR_MODEL' in os.environ:
     detector_model = int(os.environ['DETECTOR_MODEL'])
@@ -23,11 +50,14 @@ if not os.path.exists(detector_model):
 
 video_capture = cv.VideoCapture(camera_id)
 
-trt_graph = tf.compat.v1.GraphDef()
-print(f'Loading model {detector_model}...')
-with tf.io.gfile.GFile(detector_model, 'rb') as f:
-    trt_graph.ParseFromString(f.read())
-    print(f'{detector_model} loaded.')
+graph_io.write_graph(trt_graph, "./model/",
+                     "trt_graph.pb", as_text=False)
+
+# trt_graph = tf.compat.v1.GraphDef()
+# print(f'Loading model {detector_model}...')
+# with tf.io.gfile.GFile(detector_model, 'rb') as f:
+#     trt_graph.ParseFromString(f.read())
+#     print(f'{detector_model} loaded.')
 
 tf_config = tf.ConfigProto()
 tf_config.gpu_options.allow_growth = True

@@ -13,7 +13,7 @@
             "cwd": "${workspaceFolder}",
             "env":
             {
-            "DISPLAY": "10.135.62.79:0.0" 
+            "DISPLAY": "10.135.62.79:0.0", 
             }
         }
     ]
