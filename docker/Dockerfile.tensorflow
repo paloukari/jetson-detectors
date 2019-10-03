@@ -44,10 +44,6 @@ RUN python3 setup.py build --cpp_implementation
 RUN python3 setup.py test --cpp_implementation
 RUN python3 setup.py install --cpp_implementation
 
-# Install the code requirements
-COPY ./src/tensorflow-detector/requirements.txt /tmp/requirements.txt
-RUN pip3 install -r /tmp/requirements.txt
-
 # Set the WORKDIR
 WORKDIR /src
 

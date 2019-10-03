@@ -13,8 +13,8 @@ else:
 if 'DETECTOR_MODEL' in os.environ:
     detector_model = int(os.environ['DETECTOR_MODEL'])
 else:
-    detector_model = './src/tensorflow-detector/model/ssd_inception_v2_coco_trt.pb'
-    
+    detector_model = './models/ssd_inception_v2_coco_trt.pb'
+
 if not os.path.exists(detector_model):
     raise ValueError(f'Could not load {detector_model}')
 
@@ -47,17 +47,17 @@ while(video_capture_result):
         raise ValueError(f'Error reading the frame from camera {camera_id}')
 
     # face detection and other logic goes here
-    image_resized = cv.resize(frame,(300,300))
+    image_resized = cv.resize(frame, (300, 300))
 
     scores, boxes, classes, num_detections = tf_sess.run(
-        [tf_scores, tf_boxes, tf_classes, tf_num_detections], 
+        [tf_scores, tf_boxes, tf_classes, tf_num_detections],
         feed_dict={tf_input: image_resized[None, ...]})
 
-    boxes = boxes[0] # index by 0 to remove batch dimension
+    boxes = boxes[0]  # index by 0 to remove batch dimension
     scores = scores[0]
     classes = classes[0]
     num_detections = num_detections[0]
-    
+
     for i in range(int(num_detections)):
         box = boxes[i] * np.array([camera_height,
                                    camera_width, camera_height, camera_width])
@@ -66,8 +66,9 @@ while(video_capture_result):
         cv.rectangle(frame, (box[1], box[0]), (box[3],
                                                box[2]), color=(0, 255, 0), thickness=1)
         text = "{0:.0f}% | {1}".format(scores[i]*100, str(int(classes[i])))
-        cv.putText(frame,text,(box[3]+10, box[2]), cv.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
-    
+        cv.putText(frame, text, (box[3]+10, box[2]),
+                   cv.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
+
     cv.imshow('Input', frame)
     if cv.waitKey(1) == 27:
         break

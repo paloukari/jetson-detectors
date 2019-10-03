@@ -9,7 +9,7 @@ else:
 if 'DETECTOR_MODEL' in os.environ:
     detector_model = int(os.environ['DETECTOR_MODEL'])
 else:
-    detector_model = './src/opencv-detector/model/haarcascade_frontalface_default.xml'
+    detector_model = './models/haarcascade_frontalface_default.xml'
 
 classifier = cv.CascadeClassifier()
 if not classifier.load(detector_model):
