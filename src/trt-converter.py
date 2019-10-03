@@ -15,7 +15,7 @@ def main(argv):
     trt_output_file = f'./models/{model_name}_trt.pb'
 
     config_path, checkpoint_path = download_detection_model(
-        model_name, '/tmp/')
+        model_name, './models/')
 
     frozen_graph, input_names, output_names = build_detection_graph(
         config=config_path,

@@ -1,15 +1,11 @@
 # Jetson Object Detection
 
-# To build and run the opencv container
-sudo docker build . -f ./docker/Dockerfile.opencv -t opencv
-sudo docker run --rm --runtime nvidia --privileged -ti -e DISPLAY=$DISPLAY -v "$PWD":/src -p 32001:22 opencv
+# To build and run the CPU accelerated container
+sudo docker build . -f ./docker/Dockerfile.opencv -t object-detection-cpu
+sudo docker run --rm --runtime nvidia --privileged -ti -e DISPLAY=$DISPLAY -v "$PWD":/src -p 32001:22 object-detection-cpu
 
-# To build and run the tensorflow container
-sudo docker build . -f ./docker/Dockerfile.tensorflow -t tensorflow
-sudo docker run --rm --runtime nvidia --privileged -ti -e DISPLAY=$DISPLAY -v "$PWD":/src -p 32001:22 tensorflow
-
-# To build and run the trt converter container
-sudo docker build . -f ./docker/Dockerfile.trtconverter -t trtconverter
-sudo docker run --rm --runtime nvidia --privileged -ti -e DISPLAY=$DISPLAY -v "$PWD":/src -p 32001:22 trtconverter
+# To build and run the GPU accelerated container
+sudo docker build . -f ./docker/Dockerfile.gpu -t object-detection-gpu
+sudo docker run --rm --runtime nvidia --privileged -ti -e DISPLAY=$DISPLAY -v "$PWD":/src -p 32001:22 object-detection-gpu
 
 > Run from the root folder of the repo

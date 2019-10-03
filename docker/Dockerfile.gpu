@@ -44,6 +44,15 @@ RUN python3 setup.py build --cpp_implementation
 RUN python3 setup.py test --cpp_implementation
 RUN python3 setup.py install --cpp_implementation
 
+# Install the dependencies for the nvidia tf_trt_models repo. This repo helps downloading the models dynamically.
+RUN sudo apt-get install --yes libfreetype6-dev
+RUN pip install matplotlib Pillow
+
+WORKDIR /
+RUN git clone --recursive https://github.com/NVIDIA-Jetson/tf_trt_models.git
+WORKDIR /tf_trt_models
+RUN ./install.sh python3
+
 # Set the WORKDIR
 WORKDIR /src
 
