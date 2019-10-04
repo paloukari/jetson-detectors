@@ -11,6 +11,10 @@
             "program": "${file}",
             "console": "integratedTerminal", 
             "cwd": "${workspaceFolder}",
+            "args": [
+                "--model-name=ssd_inception_v2_coco",
+                "--camera-id=1", 
+                "--trt-optimize"],
             "env":
             {
             "DISPLAY": "10.135.62.79:0.0", 

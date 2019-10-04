@@ -1,6 +1,6 @@
 import cv2 as cv
 import os
-
+import time
 if 'CAMERA_ID' in os.environ:
     camera_id = int(os.environ['CAMERA_ID'])
 else:
@@ -16,6 +16,7 @@ if not classifier.load(detector_model):
     raise ValueError(f'Could not load {detector_model}')
 
 video_capture = cv.VideoCapture(camera_id)
+start_time = time.time()
 
 while(True):
     # Capture frame-by-frame
@@ -30,6 +31,10 @@ while(True):
     for (x, y, w, h) in faces:
         # send each face in mqtt topic
         cv.rectangle(frame, (x, y), (x+w, y+h), color=(0, 255, 0), thickness=2)
+
+    cv.putText(frame, f"FPS:{ 1.0 / (time.time() - start_time):0.1f}",
+               (10, 30), cv.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
+    start_time = time.time()
 
     cv.imshow('Input', frame)
     if cv.waitKey(1) == 27:

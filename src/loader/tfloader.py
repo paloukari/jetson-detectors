@@ -2,18 +2,10 @@ import sys
 sys.path.insert(1, '/')
 from tf_trt_models.detection import download_detection_model
 from tf_trt_models.detection import build_detection_graph
-from tensorflow.python.compiler.tensorrt import trt_convert as trt
 
-
-def main(argv):
-
-    model_name = 'ssd_inception_v2_coco'
-
-    if len(argv) == 1:
-        model_name = argv[0]
-
-    trt_output_file = f'./models/{model_name}_trt.pb'
-
+def load_model(model_name):
+    
+    # Download and load the model
     config_path, checkpoint_path = download_detection_model(
         model_name, './models/')
 
@@ -40,6 +32,4 @@ def main(argv):
     print(f'Input names: {input_names}')
     print(f'Output names: {output_names}')
 
-
-if __name__ == "__main__":
-    main(sys.argv[1:])
+    return trt_graph
