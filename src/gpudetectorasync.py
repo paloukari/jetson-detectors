@@ -3,6 +3,7 @@ import numpy as np
 import os
 import cv2 as cv
 import click
+import time
 
 from multithreading.videocaptureasync import VideoCaptureAsync
 from multithreading.objectdetectasync import ObjectDetectionAsync
@@ -40,6 +41,7 @@ def detector(model_name, camera_id, trt_optimize):
     object_detection = ObjectDetectionAsync(
         model_name, trt_optimize, frame_callback)
     object_detection.start()
+    start_time = time.time()
 
     while(video_capture_result):
         # Capture frame-by-frame
@@ -50,10 +52,9 @@ def detector(model_name, camera_id, trt_optimize):
         if video_capture_result == False:
             print(f'Error reading the frame from camera {camera_id}')
 
-        scores, boxes, classes, num_detections = object_detection.read()
-        if scores is None:
-            time.sleep(0.1)
-        else:
+        if object_detection.ready:
+            scores, boxes, classes, num_detections = object_detection.read()
+
             for i in range(int(num_detections)):
                 box = boxes[i] * np.array([camera_height,
                                            camera_width, camera_height, camera_width])
@@ -67,6 +68,10 @@ def detector(model_name, camera_id, trt_optimize):
                 cv.putText(frame, f"FPS:{ 1.0 / (time.time() - start_time):0.1f}",
                            (10, 30), cv.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
                 start_time = time.time()
+        else:
+            cv.putText(frame, f"Loading detector"+int(time.time() % 4)*".",
+                       (10, 30), cv.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
+            time.sleep(0.1)
 
         cv.imshow('Input', frame)
         if cv.waitKey(1) == 27:

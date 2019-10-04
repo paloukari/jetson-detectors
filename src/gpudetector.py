@@ -3,6 +3,8 @@ import os
 import cv2 as cv
 import tensorflow as tf
 import click
+import time
+
 from loader.tfloader import load_model as tf_loader
 from loader.trtloader import load_model as trt_loader
 

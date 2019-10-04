@@ -14,7 +14,7 @@ class ObjectDetectionAsync:
         self.classes = [0]
         self.num_detections = [0]
 
-        self.created = False
+        self._ready = False
 
     def start(self):
         if self.started:
@@ -56,11 +56,11 @@ class ObjectDetectionAsync:
         # run once to load all cuda libs
         self.scores, self.boxes, self.classes, self.num_detections = self.tf_sess.run(
                         [self.tf_scores, self.tf_boxes, self.tf_classes, self.tf_num_detections], feed_dict={self.tf_input: self.frame[None, ...]})
-        self.created = True
+        self._ready = True
 
     def update(self):
         self._create()
-        while self.created and self.started:
+        while self._ready:
             self.frame = self.frame_callback()
 
             if self.frame is not None:
@@ -70,6 +70,9 @@ class ObjectDetectionAsync:
                 except Exception as ex:
                     print(ex)
                 
+    @property
+    def ready(self):
+        return self._ready
 
     def read(self):
         self.scores[0], self.boxes[0], self.classes[0], self.num_detections[0]
