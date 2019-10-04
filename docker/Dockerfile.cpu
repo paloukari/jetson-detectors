@@ -1,0 +1,21 @@
+FROM nvcr.io/nvidia/l4t-base:r32.2
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install Python3, Git and OpenCV
+RUN apt-get update && apt-get --yes install openssh-server python3-dev python3-pip python3-opencv git
+RUN pip3 install --upgrade pip
+
+RUN pip3 install click
+
+ENV LC_ALL C.UTF-8
+ENV LANG C.UTF-8
+
+# Set the WORKDIR
+WORKDIR /src
+
+ENTRYPOINT service ssh restart && bash
+
+# Install the ssh public key - Remove this in a production deployment
+COPY ./keys/id_rsa.pub /tmp/tmp.pub
+RUN mkdir -p ~/.ssh && chmod 700 ~/.ssh && cat /tmp/tmp.pub >> ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys && rm -f /tmp/tmp.pub

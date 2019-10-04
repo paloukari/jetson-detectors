@@ -1,0 +1,66 @@
+FROM nvcr.io/nvidia/l4t-base:r32.2
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install Python3, Git and OpenCV
+RUN apt-get update && apt-get --yes install openssh-server python3-dev python3-pip python3-opencv git 
+RUN pip3 install --upgrade pip
+
+# Install system packages as required by TensorFlow
+RUN apt-get --yes install libhdf5-serial-dev hdf5-tools libhdf5-dev zlib1g-dev zip libjpeg8-dev pkg-config dh-autoreconf
+
+RUN pip3 install setuptools -U
+RUN pip3 install 'numpy<1.17,>=1.14.5'
+RUN pip3 install h5py
+
+# Install TensorFlow prebuilt wheel fron nvidia
+RUN pip3 install --pre --extra-index-url https://developer.download.nvidia.com/compute/redist/jp/v42 tensorflow-gpu
+
+# Install the cpp protobuf 
+RUN set -e
+RUN mkdir -p /tmp/protoc
+WORKDIR /tmp/protoc
+RUN wget https://github.com/protocolbuffers/protobuf/releases/download/v3.6.1/protobuf-python-3.6.1.zip
+RUN wget https://github.com/protocolbuffers/protobuf/releases/download/v3.6.1/protoc-3.6.1-linux-aarch_64.zip
+
+RUN unzip protobuf-python-3.6.1.zip
+RUN unzip protoc-3.6.1-linux-aarch_64.zip -d protoc-3.6.1
+RUN cp protoc-3.6.1/bin/protoc /usr/local/bin/protoc
+RUN export PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=cpp
+WORKDIR protobuf-3.6.1/
+
+RUN ./autogen.sh
+RUN ./configure --prefix=/usr/local
+RUN make
+RUN make check
+RUN make install
+RUN ldconfig
+
+RUN pip3 uninstall -y protobuf
+RUN pip3 install Cython
+WORKDIR python/
+RUN sed -i '205s/if v:/if True:/' setup.py
+RUN python3 setup.py build --cpp_implementation
+RUN python3 setup.py test --cpp_implementation
+RUN python3 setup.py install --cpp_implementation
+
+# Install the dependencies for the nvidia tf_trt_models repo. This repo helps downloading the models dynamically.
+RUN sudo apt-get install --yes libfreetype6-dev
+RUN pip install matplotlib Pillow click
+
+WORKDIR /
+RUN git clone --recursive https://github.com/NVIDIA-Jetson/tf_trt_models.git
+WORKDIR /tf_trt_models
+RUN ./install.sh python3
+
+ENV LC_ALL C.UTF-8
+ENV LANG C.UTF-8
+
+# Set the WORKDIR
+WORKDIR /src
+
+ENTRYPOINT service ssh restart && bash
+
+# Install the ssh public key - Remove this in a production deployment
+COPY ./keys/id_rsa.pub /tmp/tmp.pub 
+RUN mkdir -p ~/.ssh && chmod 700 ~/.ssh && cat /tmp/tmp.pub >> ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys && rm -f /tmp/tmp.pub

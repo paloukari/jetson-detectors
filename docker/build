@@ -1,1 +1,0 @@
-docker build . -f ./docker/Dockerfile.python3.dev -t dev-python3
