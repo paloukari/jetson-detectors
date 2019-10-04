@@ -2,17 +2,18 @@ import time
 import threading
 import cv2
 
+
 class ObjectDetectionAsync:
     def __init__(self, model_name, trt_optimize, frame_callback):
         self.started = False
         self.model_name = model_name
-        self.trt_optimize = trt_optimize 
+        self.trt_optimize = trt_optimize
         self.frame_callback = frame_callback
 
-        self.scores = [0]
-        self.boxes = [0]
-        self.classes = [0]
-        self.num_detections = [0]
+        self.scores = None
+        self.boxes = None
+        self.classes = None
+        self.num_detections = None
 
         self._ready = False
 
@@ -24,7 +25,7 @@ class ObjectDetectionAsync:
         self.thread = threading.Thread(target=self.update, args=())
         self.thread.start()
         return self
-    
+
     def _create(self):
         import tensorflow as tf
         from loader.tfloader import load_model as tf_loader
@@ -42,21 +43,27 @@ class ObjectDetectionAsync:
         tf.import_graph_def(trt_graph, name='')
 
         self.tf_input = self.tf_sess.graph.get_tensor_by_name('image_tensor:0')
-        self.tf_scores = self.tf_sess.graph.get_tensor_by_name('detection_scores:0')
-        self.tf_boxes = self.tf_sess.graph.get_tensor_by_name('detection_boxes:0')
-        self.tf_classes = self.tf_sess.graph.get_tensor_by_name('detection_classes:0')
-        self.tf_num_detections = self.tf_sess.graph.get_tensor_by_name('num_detections:0')
-        
-        self.frame =  None
+        self.tf_scores = self.tf_sess.graph.get_tensor_by_name(
+            'detection_scores:0')
+        self.tf_boxes = self.tf_sess.graph.get_tensor_by_name(
+            'detection_boxes:0')
+        self.tf_classes = self.tf_sess.graph.get_tensor_by_name(
+            'detection_classes:0')
+        self.tf_num_detections = self.tf_sess.graph.get_tensor_by_name(
+            'num_detections:0')
+
+        self.frame = None
         # wait for the video feed to activate
         while self.frame is None:
-             time.sleep(0.1)
-             self.frame = self.frame_callback()
-             
+            time.sleep(0.1)
+            self.frame = self.frame_callback()
+
         # run once to load all cuda libs
         self.scores, self.boxes, self.classes, self.num_detections = self.tf_sess.run(
-                        [self.tf_scores, self.tf_boxes, self.tf_classes, self.tf_num_detections], feed_dict={self.tf_input: self.frame[None, ...]})
+            [self.tf_scores, self.tf_boxes, self.tf_classes, self.tf_num_detections], feed_dict={self.tf_input: self.frame[None, ...]})
         self._ready = True
+
+        print("Detector ready")
 
     def update(self):
         self._create()
@@ -69,13 +76,13 @@ class ObjectDetectionAsync:
                         [self.tf_scores, self.tf_boxes, self.tf_classes, self.tf_num_detections], feed_dict={self.tf_input: self.frame[None, ...]})
                 except Exception as ex:
                     print(ex)
-                
+
     @property
     def ready(self):
         return self._ready
 
     def read(self):
-        self.scores[0], self.boxes[0], self.classes[0], self.num_detections[0]
+        return self.scores, self.boxes, self.classes, self.num_detections
 
     def stop(self):
         self.started = False

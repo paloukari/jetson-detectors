@@ -1,12 +1,14 @@
-import numpy as np
 import os
-import cv2 as cv
-import tensorflow as tf
-import click
-import time
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
-from loader.tfloader import load_model as tf_loader
 from loader.trtloader import load_model as trt_loader
+from loader.tfloader import load_model as tf_loader
+import time
+import click
+
+import tensorflow as tf
+import cv2 as cv
+import numpy as np
 
 
 @click.command()
@@ -72,9 +74,10 @@ def detector(model_name, camera_id, trt_optimize):
             text = f"{scores[i]*100:.0f} | {str(int(classes[i]))}"
             cv.putText(frame, text, (box[3]+10, box[2]),
                        cv.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
-            cv.putText(frame, f"FPS:{ 1.0 / (time.time() - start_time):0.1f}",
-                       (10, 30), cv.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
-            start_time = time.time()
+
+        cv.putText(frame, f"FPS:{ 1.0 / (time.time() - start_time):0.1f}",
+                   (10, 30), cv.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
+        start_time = time.time()
 
         cv.imshow('Input', frame)
         if cv.waitKey(1) == 27:

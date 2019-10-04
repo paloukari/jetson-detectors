@@ -53,6 +53,9 @@ RUN git clone --recursive https://github.com/NVIDIA-Jetson/tf_trt_models.git
 WORKDIR /tf_trt_models
 RUN ./install.sh python3
 
+ENV LC_ALL C.UTF-8
+ENV LANG C.UTF-8
+
 # Set the WORKDIR
 WORKDIR /src
 

@@ -1,6 +1,7 @@
 import time
 import numpy as np
 import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3' 
 import cv2 as cv
 import click
 import time
@@ -52,21 +53,27 @@ def detector(model_name, camera_id, trt_optimize):
         if video_capture_result == False:
             print(f'Error reading the frame from camera {camera_id}')
 
-        if object_detection.ready:
+        if object_detection.ready == True:
             scores, boxes, classes, num_detections = object_detection.read()
+            if scores is not None and boxes is not None and classes is not None and num_detections is not None:
+                scores=scores[0]
+                boxes=boxes[0]
+                classes=classes[0]
+                num_detections=num_detections[0]
 
-            for i in range(int(num_detections)):
-                box = boxes[i] * np.array([camera_height,
-                                           camera_width, camera_height, camera_width])
-                box = box.astype(int)
+                for i in range(int(num_detections)):
+                    box = boxes[i] * np.array([camera_height,
+                                            camera_width, camera_height, camera_width])
+                    box = box.astype(int)
 
-                cv.rectangle(frame, (box[1], box[0]), (box[3],
-                                                       box[2]), color=(0, 255, 0), thickness=1)
-                text = f"{scores[i]*100:.0f} | {str(int(classes[i]))}"
-                cv.putText(
-                    frame, text, (box[3]+10, box[2]), cv.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
+                    cv.rectangle(frame, (box[1], box[0]), (box[3],
+                                                        box[2]), color=(0, 255, 0), thickness=1)
+                    text = f"{scores[i]*100:.0f} | {str(int(classes[i]))}"
+                    cv.putText(
+                        frame, text, (box[3]+10, box[2]), cv.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
+                        
                 cv.putText(frame, f"FPS:{ 1.0 / (time.time() - start_time):0.1f}",
-                           (10, 30), cv.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
+                        (10, 30), cv.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
                 start_time = time.time()
         else:
             cv.putText(frame, f"Loading detector"+int(time.time() % 4)*".",
