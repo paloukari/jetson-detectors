@@ -1,6 +1,6 @@
-# High Throuput Object detector for the Nvidia Jetsoin devices family 
+# High Throuput Object detector for the Nvidia Jetson device family 
 
-This is the code used in [this blog post](http://havedatawilltrain.com/three-threads-to-perdido)
+This is the code used in [this blog post](http://havedatawilltrain.com/three-threads-to-perdido) to demonstrate different ways of improving the performance of a simple Object Detection program.
 
 ## Clone the example repo
 ```
